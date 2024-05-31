@@ -1,0 +1,23 @@
+settings:
+    application:
+        domain: localhost:8000
+        host: 0.0.0.0
+        ishttps: false
+        mode: dev
+        name: kylin-lab
+        port: "8000"
+        readtimeout: 1
+        writertimeout: 2
+    database:
+        dbtype: mysql
+        host: 127.0.0.1
+        name: kylin-lab
+        password: 960096
+        port: 3306
+        username: root
+    log:
+        dir: temp/logs
+        operdb: false
+    ssl:
+        key: keystring
+        pem: temp/pem.pem
