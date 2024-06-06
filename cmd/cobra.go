@@ -4,16 +4,17 @@ import (
 	"errors"
 	"github.com/spf13/cobra"
 	log "github.com/wonderivan/logger"
+	"kylin-lab/cmd/migrate"
 	"kylin-lab/server"
 	"os"
 )
 
 var rootCmd = &cobra.Command{
-	Use:               "loopy",
+	Use:               "kylin-lab",
 	Short:             "-v",
 	SilenceUsage:      true,
 	DisableAutoGenTag: true,
-	Long:              `loopy`,
+	Long:              `kylin-lab`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("requires at least one arg")
@@ -22,13 +23,14 @@ var rootCmd = &cobra.Command{
 	},
 	PersistentPreRunE: func(*cobra.Command, []string) error { return nil },
 	Run: func(cmd *cobra.Command, args []string) {
-		usageStr := `loopy V1.1.0, -h for more help`
+		usageStr := `kylin-lab V1.1.0, -h for more help`
 		log.Info("%s\n", usageStr)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(server.StartCmd)
+	rootCmd.AddCommand(migrate.StartCmd)
 }
 
 // Execute : apply commands

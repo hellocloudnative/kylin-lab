@@ -26,7 +26,7 @@ var (
 	StartCmd = &cobra.Command{
 		Use:     "server",
 		Short:   "Start API server",
-		Example: "prince-x server config/settings.yml",
+		Example: "kylin-lab server config/settings.yaml",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			usage()
 			setup()

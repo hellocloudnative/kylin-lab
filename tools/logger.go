@@ -2,9 +2,13 @@ package tools
 
 import (
 	"errors"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	config2 "kylin-lab/tools/config"
 	"os"
+	"path"
+	"runtime"
+	"strings"
 	"time"
 )
 
@@ -12,8 +16,22 @@ func InitLogger() {
 	log.SetFormatter(&log.TextFormatter{FieldMap: log.FieldMap{
 		log.FieldKeyTime:  "@timestamp",
 		log.FieldKeyLevel: "@level",
-		log.FieldKeyMsg:   "@message"}})
-
+		log.FieldKeyMsg:   "@message"},
+		ForceColors:     true, //设置颜色
+		FullTimestamp:   true,
+		DisableQuote:    true,
+		TimestampFormat: "2006-01-02 15:04:05",
+		CallerPrettyfier: func(frame *runtime.Frame) (function string, file string) {
+			//处理函数名
+			fs := strings.Split(frame.Function, ".")
+			fun := ""
+			if len(fs) > 0 {
+				fun = fs[len(fs)-1]
+			}
+			fileName := path.Base(frame.File)
+			return fmt.Sprintf("[\033[1;34m%s\033[0m]", fun), fmt.Sprintf("[%s:%d]", fileName, frame.Line)
+		},
+	})
 	switch Mode(config2.ApplicationConfig.Mode) {
 	case ModeDev, ModeTest:
 		log.SetOutput(os.Stdout)
@@ -21,7 +39,7 @@ func InitLogger() {
 	case ModeProd:
 		file, err := os.OpenFile(config2.LogConfig.Dir+"/api-"+time.Now().Format("2006-01-02")+".log", os.O_WRONLY|os.O_APPEND|os.O_CREATE|os.O_SYNC, 0600)
 		if err != nil {
-			log.Fatalln("log init failed")
+			log.Fatalln("log init failed", err)
 		}
 
 		var info os.FileInfo

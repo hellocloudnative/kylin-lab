@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"kylin-lab/api/vm"
 )
 
 func InitSysRouter(r *gin.Engine) *gin.RouterGroup {
@@ -19,6 +20,7 @@ func kylinlabNoCheckRoleRouter(r *gin.RouterGroup) {
 }
 
 func registerUserRouter(v1 *gin.RouterGroup) {
-	//router := v1.Group("/")
+	router := v1.Group("/")
+	router.GET("/getALLVMlist", vm.GetALLVMList)
 
 }
