@@ -2,11 +2,10 @@ package models
 
 import (
 	"errors"
+	"fmt"
+	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
 	"kylin-lab/global/orm"
-	"kylin-lab/tools"
-	"log"
-	"strings"
 )
 
 func (LabUser) TableName() string {
@@ -86,25 +85,21 @@ func (e *LabUser) GetList() (LabUserView []LabUserView, err error) {
 	return
 }
 
-func (e *LabUser) GetUserInfo() (LabUserView LabUserView, err error) {
-
-	table := orm.Eloquent.Table(e.TableName()).Select([]string{"lab_user.*"})
-	if e.UserId != 0 {
-		table = table.Where("user_id = ?", e.UserId)
+func (e *LabUser) GetUserInfo(id int) (LabUserView LabUserView, err error) {
+	// 检查id是否为有效值
+	if id <= 0 {
+		return LabUserView, fmt.Errorf("invalid user ID: %d", id)
+	}
+	if err := orm.Eloquent.Table(e.TableName()).Where("user_id = ?", id).Find(&LabUserView).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return LabUserView, fmt.Errorf("user with ID %d not found", id)
+		} else {
+			return LabUserView, err
+		}
 	}
 
-	if e.Username != "" {
-		table = table.Where("username = ?", e.Username)
-	}
-
-	if e.Password != "" {
-		table = table.Where("password = ?", e.Password)
-	}
-
-	if err = table.First(&LabUserView).Error; err != nil {
-		return
-	}
-	return
+	// 如果查询成功且没有错误，返回查询到的用户信息
+	return LabUserView, nil
 }
 
 func (e *LabUser) GetPage(pageSize int, pageIndex int) ([]LabUserPage, int, error) {
@@ -208,24 +203,5 @@ func (e *LabUser) BatchDelete(id []int) (Result bool, err error) {
 		return
 	}
 	Result = true
-	return
-}
-
-func (e *LabUser) SetPwd(pwd LabUserPwd) (Result bool, err error) {
-	user, err := e.GetUserInfo()
-	if err != nil {
-		tools.HasError(err, "获取用户数据失败(代码202)", 500)
-	}
-	_, err = tools.CompareHashAndPassword(user.Password, pwd.OldPassword)
-	if err != nil {
-		if strings.Contains(err.Error(), "hashedPassword is not the hash of the given password") {
-			tools.HasError(err, "密码错误(代码202)", 500)
-		}
-		log.Print(err)
-		return
-	}
-	e.Password = pwd.NewPassword
-	_, err = e.Update(e.UserId)
-	tools.HasError(err, "更新密码失败(代码202)", 500)
 	return
 }

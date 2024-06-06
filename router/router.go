@@ -22,5 +22,6 @@ func kylinlabNoCheckRoleRouter(r *gin.RouterGroup) {
 func registerUserRouter(v1 *gin.RouterGroup) {
 	router := v1.Group("/")
 	router.GET("/getALLVMlist", vm.GetALLVMList)
+	router.GET("/getVMInfo", vm.GetVMInfo)
 
 }

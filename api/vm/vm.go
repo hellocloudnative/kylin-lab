@@ -47,3 +47,32 @@ func GetALLVMList(c *gin.Context) {
 	res.Data = mp
 	c.JSON(http.StatusOK, res.ReturnOK())
 }
+
+func GetVMInfo(c *gin.Context) {
+	var data models.LabVirtualMachine
+	var user models.LabUser
+	vmId := c.Request.FormValue("vmId")
+	if vmId == "" {
+		app.OK(c, nil, "参数错误")
+		return
+	}
+	data.VmId, _ = tools.StringToInt(vmId)
+
+	virtualMachineInfo, err := data.GetVirtualMachineInfo()
+	if err != nil {
+		// 处理GetVirtualMachineInfo方法的错误
+		app.Error(c, 500, err, "查询失败")
+		return
+	}
+	userInfo, err := user.GetUserInfo(virtualMachineInfo.UserID)
+	if err != nil {
+		app.Error(c, 500, err, "查询失败")
+		return
+	}
+	virtualMachineInfo.UserName.Username = userInfo.Username
+	result := map[string]interface{}{
+		"data": virtualMachineInfo,
+	}
+	tools.HasError(err, "查询失败", 500)
+	app.OK(c, result, "查询成功")
+}

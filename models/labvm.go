@@ -15,6 +15,7 @@ type LabVirtualMachinePage struct {
 }
 
 type LabVirtualMachineView struct {
+	UserName
 	LabVirtualMachineId
 	LabVirtualMachineInfo
 }
@@ -70,4 +71,17 @@ func (e *LabVirtualMachine) GetPage(pageSize int, pageIndex int) ([]LabVirtualMa
 	}
 	table.Count(&count)
 	return doc, count, nil
+}
+
+func (e *LabVirtualMachine) GetVirtualMachineInfo() (LabVirtualMachineView LabVirtualMachineView, err error) {
+
+	table := orm.Eloquent.Table(e.TableName()).Select([]string{"lab_virtualMachine.*"})
+	if e.VmId != 0 {
+		table = table.Where("vm_id = ?", e.VmId)
+	}
+
+	if err = table.First(&LabVirtualMachineView).Error; err != nil {
+		return
+	}
+	return
 }
