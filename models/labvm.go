@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"kylin-lab/global/orm"
 	"time"
 )
@@ -36,7 +37,7 @@ type LabVirtualMachineInfo struct {
 	OSImage         string    `gorm:"type:varchar(255)"  json:"osImage"`
 	MachineSpec     string    `gorm:"type:varchar(255)" json:"machineSpec"`
 	IPAddress       string    `gorm:"type:varchar(255)" json:"ipAddress"`
-	Duration        string    `gorm:"type:varchar(255)" json:"duration"`
+	Duration        string    `gorm:"type:int(2)" json:"duration"`
 	Status          string    `gorm:"type:int(1)" json:"status"`
 	VmLog           string    `gorm:"type:varchar(255)" json:"vmlog"`
 	VNCAddress      string    `gorm:"type:varchar(255)" json:"vncAddress"`
@@ -84,4 +85,29 @@ func (e *LabVirtualMachine) GetVirtualMachineInfo() (LabVirtualMachineView LabVi
 		return
 	}
 	return
+}
+
+func (e *LabVirtualMachine) Update(id int, duration, status string) (update LabVirtualMachine, err error) {
+	// 检查id是否有效
+	if id <= 0 {
+		return update, errors.New("invalid ID")
+	}
+
+	// 根据id获取要更新的记录
+	if err = orm.Eloquent.Table(e.TableName()).Where("vm_id = ?", id).First(&update).Error; err != nil {
+		return update, err // 返回错误
+	}
+
+	// 这里假设e结构体中包含了你想要更新的字段，并且这些字段已经被修改
+	// 例如，e.FieldName = newValue
+	e.Duration = duration
+	e.Status = status
+
+	// 更新记录
+	if err = orm.Eloquent.Table(e.TableName()).Model(&update).Updates(e).Error; err != nil {
+		return update, err // 返回错误
+	}
+
+	// 返回更新后的记录
+	return update, nil
 }

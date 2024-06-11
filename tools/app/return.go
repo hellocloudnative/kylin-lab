@@ -10,6 +10,7 @@ func Error(c *gin.Context, code int, err error, msg string) {
 	var res Response
 	res.Msg = err.Error()
 	if msg != "" {
+		res.Data = err.Error()
 		res.Msg = msg
 	}
 	c.JSON(http.StatusOK, res.ReturnError(code))

@@ -1,7 +1,9 @@
 package vm
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
+	log "github.com/wonderivan/logger"
 	"kylin-lab/models"
 	"kylin-lab/tools"
 	"kylin-lab/tools/app"
@@ -69,10 +71,51 @@ func GetVMInfo(c *gin.Context) {
 		app.Error(c, 500, err, "查询失败")
 		return
 	}
+
 	virtualMachineInfo.UserName.Username = userInfo.Username
+
 	result := map[string]interface{}{
 		"data": virtualMachineInfo,
 	}
 	tools.HasError(err, "查询失败", 500)
 	app.OK(c, result, "查询成功")
+}
+
+func UpdateVMStatus(c *gin.Context) {
+	var data models.LabVirtualMachine
+	err := c.Bind(&data)
+	tools.HasError(err, "参数错误", -1)
+	if data.VmId == 0 {
+		app.Error(c, 500, errors.New("ID不能为空"), "更新失败")
+		return
+	}
+
+	if data.Status == "" {
+		app.Error(c, 500, errors.New("状态不能为空"), "更新失败")
+		return
+	}
+
+	duration, _ := tools.StringToInt(data.Duration)
+	status, _ := tools.StringToInt(data.Status)
+
+	if status > 1 || status < 0 {
+		app.Error(c, 500, errors.New("状态错误"), "更新失败")
+		return
+	}
+	if status == 0 && duration <= 0 {
+		app.Error(c, 500, errors.New("使用状态下时长不能为0"), "更新失败")
+		return
+	}
+
+	if status == 1 || duration < 0 {
+		//deletevm
+		log.Info("delete vm")
+	}
+
+	updatedData, err := data.Update(data.VmId, data.Duration, data.Status)
+	if err != nil {
+		app.Error(c, 500, err, "更新失败")
+		return
+	}
+	app.OK(c, updatedData, "更新成功")
 }
