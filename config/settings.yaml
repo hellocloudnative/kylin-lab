@@ -3,7 +3,7 @@ settings:
         domain: localhost:8000
         host: 0.0.0.0
         ishttps: false
-        mode: dev
+        mode: od
         name: kylin-lab
         port: "8000"
         readtimeout: 1
@@ -15,6 +15,9 @@ settings:
         password: 960096
         port: 3306
         username: root
+    kylincloud:
+        apiurl: http://10.44.61.74:8093
+        authurl: http://10.44.61.74:8094
     log:
         dir: temp/logs
         operdb: false

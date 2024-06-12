@@ -14,6 +14,7 @@ var cfgApplication *viper.Viper
 var cfgJwt *viper.Viper
 var cfgLog *viper.Viper
 var cfgSsl *viper.Viper
+var cfkylinCloud *viper.Viper
 
 // 载入配置文件
 func ConfigSetup(path string) {
@@ -34,6 +35,12 @@ func ConfigSetup(path string) {
 		panic("config not found settings.database")
 	}
 	DatabaseConfig = InitDatabase(cfgDatabase)
+
+	cfkylinCloud = viper.Sub("settings.kylinCloud")
+	if cfkylinCloud == nil {
+		panic("config not found settings.kylinCloud")
+	}
+	KylinCloudConfig = InitKylinCloud(cfkylinCloud)
 
 	cfgApplication = viper.Sub("settings.application")
 	if cfgApplication == nil {

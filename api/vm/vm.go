@@ -10,6 +10,32 @@ import (
 	"net/http"
 )
 
+type InstancesInfo struct {
+	HwArchitecture string `json:"hw_architecture"`
+	ImageName      string `json:"imageName"`
+	Flavors        string `json:"flavors"`
+	NetworkName    string `json:"networkName"`
+	TimeOfuse      int    `json:"timeOfuse"`
+}
+
+func ApplyInstances(c *gin.Context) {
+	var instancesInfo InstancesInfo
+	err := c.ShouldBindJSON(&instancesInfo)
+	tools.HasError(err, "数据解析失败", -1)
+	// 创建虚拟机
+	serverInfoResponse, err := PostApplyInstances(instancesInfo.HwArchitecture, instancesInfo.ImageName, instancesInfo.Flavors, instancesInfo.NetworkName, instancesInfo.TimeOfuse)
+	if err != nil {
+		log.Error("申请机器失败", err)
+		app.Error(c, http.StatusInternalServerError, err, "申请机器失败")
+		return
+	}
+	log.Info("申请机器成功", serverInfoResponse.Servers[0].Id)
+	data := instancesInfo
+	log.Info("申请机器成功", data)
+	app.OK(c, data, "申请机器成功")
+
+}
+
 func GetALLVMList(c *gin.Context) {
 	var data models.LabVirtualMachine
 	var err error
@@ -118,4 +144,14 @@ func UpdateVMStatus(c *gin.Context) {
 		return
 	}
 	app.OK(c, updatedData, "更新成功")
+}
+
+func GetALLImagesList(c *gin.Context) {
+	images, err := GetImagesRequest()
+	if err != nil {
+		log.Error(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve token"})
+		return
+	}
+	c.JSON(http.StatusOK, images.Images)
 }

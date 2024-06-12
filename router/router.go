@@ -13,6 +13,7 @@ func InitSysRouter(r *gin.Engine) *gin.RouterGroup {
 	//g.GET("/token", api.GetToken)
 	kylinlabNoCheckRoleRouter(g)
 	g.GET("/get-kylincloud-token", vm.GetKylinCloudToken)
+	g.GET("/get-kylincloud-images", vm.GetKylinCloudImages)
 	g.GET("/lab-token", api.LabToken)
 	return g
 }
@@ -27,6 +28,8 @@ func registerUserRouter(v1 *gin.RouterGroup) {
 	router := v1.Group("/")
 	router.GET("/getALLVMlist", vm.GetALLVMList)
 	router.GET("/getVMInfo", vm.GetVMInfo)
+	router.GET("/getALLImagesList", vm.GetALLImagesList)
+	router.POST("/applyInstances", vm.ApplyInstances)
 	router.PUT("/updateVMStatus", vm.UpdateVMStatus)
 
 }
