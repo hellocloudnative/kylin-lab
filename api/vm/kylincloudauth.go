@@ -16,7 +16,7 @@ import (
 )
 
 type ServerWrapper struct {
-	Servers []Server `json:"servers"`
+	Servers []Server `json:"items"`
 }
 
 type Server struct {
@@ -162,6 +162,16 @@ type ImageWrapper struct {
 
 type FlavorsWrapper struct {
 	Flavors []Flavor `json:"flavors"`
+}
+
+type VNCWrapper struct {
+	Passwd   interface{} `json:"passwd"`
+	Host     string      `json:"host"`
+	Protocol string      `json:"protocol"`
+	Url      string      `json:"url"`
+	Tlsport  interface{} `json:"tlsport"`
+	Type     string      `json:"type"`
+	Port     string      `json:"port"`
 }
 
 type NetworkWrapper struct {
@@ -310,62 +320,6 @@ func PostAuthRequestToken(urlsting string) (string, error) {
 	return authResponse.Data.Token, nil
 }
 
-func GetServersRequest() (ServerWrapper, error) {
-	// 调用 PostAuthRequestToken 函数获取 token
-	token, err := PostAuthRequestToken(config2.KylinCloudConfig.AuthUrl + "/api/auth")
-	if err != nil {
-		log.Error(err)
-		return ServerWrapper{}, err // 返回空的 ImageWrapper 和错误
-	}
-
-	// 创建HTTP GET请求
-	req, err := http.NewRequest(http.MethodGet, config2.KylinCloudConfig.ApiUrl+"/api/instances", nil)
-	if err != nil {
-		log.Println("Error creating HTTP request:", err)
-		return ServerWrapper{}, err // 返回空的 ImageWrapper 和错误
-	}
-
-	// 设置请求头部
-	req.Header.Set("x-auth-token", token)
-	req.Header.Set("X-Requested-With", "XMLHttpRequest")
-
-	// 创建HTTP客户端
-	client := &http.Client{
-		Timeout: time.Second * 10, // 设置超时时间
-	}
-
-	// 发送请求
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Error sending GET request:", err)
-		return ServerWrapper{}, err // 返回空的 ImageWrapper 和错误
-	}
-	defer resp.Body.Close()
-
-	// 检查响应状态码
-	if resp.StatusCode != http.StatusOK {
-		log.Printf("Failed to get images: %v\n", resp.StatusCode)
-		return ServerWrapper{}, fmt.Errorf("failed to get server: %v", resp.StatusCode) // 返回空的 ImageWrapper 和错误
-	}
-
-	// 读取响应体
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Error reading response body:", err)
-		return ServerWrapper{}, err // 返回空的 ImageWrapper 和错误
-	}
-
-	// 解析响应体为 ImageWrapper
-	var serverssResponse ServerWrapper
-	if err := json.Unmarshal(body, &serverssResponse); err != nil {
-		log.Println("Error unmarshalling response:", err)
-		return ServerWrapper{}, err // 返回空的 ImageWrapper 和错误
-	}
-
-	//log.Println("Parsed images:", imagesResponse.Images)
-	return serverssResponse, nil // 成功返回解析后的 ImageWrapper 和 nil
-}
-
 func GetImagesRequest() (ImageWrapper, error) {
 	// 调用 PostAuthRequestToken 函数获取 token
 	token, err := PostAuthRequestToken(config2.KylinCloudConfig.AuthUrl + "/api/auth")
@@ -420,6 +374,121 @@ func GetImagesRequest() (ImageWrapper, error) {
 
 	//log.Println("Parsed images:", imagesResponse.Images)
 	return imagesResponse, nil // 成功返回解析后的 ImageWrapper 和 nil
+}
+
+func GetServersRequest(id string) (ServerWrapper, error) {
+	// 调用 PostAuthRequestToken 函数获取 token
+	token, err := PostAuthRequestToken(config2.KylinCloudConfig.AuthUrl + "/api/auth")
+	if err != nil {
+		log.Error(err)
+		return ServerWrapper{}, err // 返回空的 ImageWrapper 和错误
+	}
+
+	baseURL := config2.KylinCloudConfig.ApiUrl + "/api/instances"
+	queryParams := url.Values{}
+	queryParams.Add("id", id) // 添加查询参数 id=123
+	urlWithQuery := baseURL + "?" + queryParams.Encode()
+	// 创建HTTP GET请求
+	req, err := http.NewRequest(http.MethodGet, urlWithQuery, nil)
+	if err != nil {
+		log.Println("Error creating HTTP request:", err)
+		return ServerWrapper{}, err // 返回空的 ImageWrapper 和错误
+	}
+
+	// 设置请求头部
+	req.Header.Set("x-auth-token", token)
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
+
+	// 创建HTTP客户端
+	client := &http.Client{
+		Timeout: time.Second * 10, // 设置超时时间
+	}
+
+	// 发送请求
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error sending GET request:", err)
+		return ServerWrapper{}, err // 返回空的 ImageWrapper 和错误
+	}
+	defer resp.Body.Close()
+
+	// 检查响应状态码
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Failed to get images: %v\n", resp.StatusCode)
+		return ServerWrapper{}, fmt.Errorf("failed to get server: %v", resp.StatusCode) // 返回空的 ImageWrapper 和错误
+	}
+
+	// 读取响应体
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Error reading response body:", err)
+		return ServerWrapper{}, err // 返回空的 ImageWrapper 和错误
+	}
+
+	// 解析响应体为 ImageWrapper
+	var serverssResponse ServerWrapper
+	if err := json.Unmarshal(body, &serverssResponse); err != nil {
+		log.Println("Error unmarshalling response:", err)
+		return ServerWrapper{}, err
+	}
+
+	return serverssResponse, nil
+}
+
+func GetVNCRequest(id string) (VNCWrapper, error) {
+	// 调用 PostAuthRequestToken 函数获取 token
+	token, err := PostAuthRequestToken(config2.KylinCloudConfig.AuthUrl + "/api/auth")
+	if err != nil {
+		log.Error(err)
+		return VNCWrapper{}, err // 返回空的 ImageWrapper 和错误
+	}
+
+	// 创建HTTP GET请求
+	req, err := http.NewRequest(http.MethodGet, config2.KylinCloudConfig.ApiUrl+"/api/instances/"+id+"/console", nil)
+	if err != nil {
+		log.Println("Error creating HTTP request:", err)
+		return VNCWrapper{}, err // 返回空的 ImageWrapper 和错误
+	}
+
+	// 设置请求头部
+	req.Header.Set("x-auth-token", token)
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
+
+	// 创建HTTP客户端
+	client := &http.Client{
+		Timeout: time.Second * 10, // 设置超时时间
+	}
+
+	// 发送请求
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error sending GET request:", err)
+		return VNCWrapper{}, err // 返回空的 ImageWrapper 和错误
+	}
+	defer resp.Body.Close()
+
+	// 检查响应状态码
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Failed to get images: %v\n", resp.StatusCode)
+		return VNCWrapper{}, fmt.Errorf("failed to get images: %v", resp.StatusCode) // 返回空的 ImageWrapper 和错误
+	}
+
+	// 读取响应体
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Error reading response body:", err)
+		return VNCWrapper{}, err // 返回空的 ImageWrapper 和错误
+	}
+
+	// 解析响应体为 ImageWrapper
+	var vncResponse VNCWrapper
+	if err := json.Unmarshal(body, &vncResponse); err != nil {
+		log.Println("Error unmarshalling response:", err)
+		return VNCWrapper{}, err // 返回空的 ImageWrapper 和错误
+	}
+
+	//log.Println("Parsed images:", imagesResponse.Images)
+	return vncResponse, nil // 成功返回解析后的 ImageWrapper 和 nil
 }
 
 func GetFlavorsRequest() (FlavorsWrapper, error) {
@@ -532,7 +601,7 @@ func GetNetworksRequest() (NetworkWrapper, error) {
 	return networkResponse, nil //
 }
 
-func PostApplyInstances(hwArchitecture, imageName, Flavors, network string, TimeOfuse int) (ServerInfoResponse, error) {
+func PostApplyInstances(hwArchitecture, imageName, Flavors, network string) (ServerInfoResponse, error) {
 	token, err := PostAuthRequestToken(config2.KylinCloudConfig.AuthUrl + "/api/auth")
 	if err != nil {
 		log.Error(err)
@@ -598,6 +667,7 @@ func PostApplyInstances(hwArchitecture, imageName, Flavors, network string, Time
 		log.Error("Error reading response body:", err)
 		return ServerInfoResponse{}, err
 	}
+
 	// 解析响应体为 ImageWrapper
 	var serverInfoResponse ServerInfoResponse
 	if err := json.Unmarshal(body, &serverInfoResponse); err != nil {

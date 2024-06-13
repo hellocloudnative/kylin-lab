@@ -2,38 +2,85 @@ package vm
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	log "github.com/wonderivan/logger"
 	"kylin-lab/models"
 	"kylin-lab/tools"
 	"kylin-lab/tools/app"
 	"net/http"
+	"time"
 )
 
-type InstancesInfo struct {
-	HwArchitecture string `json:"hw_architecture"`
-	ImageName      string `json:"imageName"`
-	Flavors        string `json:"flavors"`
-	NetworkName    string `json:"networkName"`
-	TimeOfuse      int    `json:"timeOfuse"`
-}
-
 func ApplyInstances(c *gin.Context) {
-	var instancesInfo InstancesInfo
+	var instancesInfo models.LabVirtualMachine
 	err := c.ShouldBindJSON(&instancesInfo)
 	tools.HasError(err, "数据解析失败", -1)
+
 	// 创建虚拟机
-	serverInfoResponse, err := PostApplyInstances(instancesInfo.HwArchitecture, instancesInfo.ImageName, instancesInfo.Flavors, instancesInfo.NetworkName, instancesInfo.TimeOfuse)
+	serverInfoResponse, err := PostApplyInstances(instancesInfo.CPUArchitecture, instancesInfo.OSImage, instancesInfo.Flavors, instancesInfo.NetworkName)
 	if err != nil {
 		log.Error("申请机器失败", err)
 		app.Error(c, http.StatusInternalServerError, err, "申请机器失败")
 		return
 	}
-	log.Info("申请机器成功", serverInfoResponse.Servers[0].Id)
-	data := instancesInfo
-	log.Info("申请机器成功", data)
-	app.OK(c, data, "申请机器成功")
 
+	// 轮询虚拟机状态
+	maxWaitTime := 5 * time.Minute
+	pollInterval := 1 * time.Second
+	timeout := time.After(maxWaitTime)
+	for {
+		select {
+		case <-time.After(pollInterval):
+			serverInfo, err := GetServersRequest(serverInfoResponse.Servers[0].Id)
+			if err != nil {
+				log.Error("获取服务器信息失败", err)
+				app.Error(c, http.StatusInternalServerError, err, "获取服务器信息失败")
+				return
+			}
+			if len(serverInfo.Servers) == 0 {
+				log.Error("未找到服务器信息")
+				continue
+			}
+			if serverInfo.Servers[0].Status == "ACTIVE" {
+				log.Info("服务器状态为 %s", serverInfo.Servers[0].Status)
+				instancesInfo.IPAddress = serverInfo.Servers[0].Addresses.Vxlan[0].Addr
+				instancesInfo.Status = "0"
+				duration, err := tools.StringToInt(instancesInfo.Duration)
+				if err != nil {
+					log.Error(err)
+				}
+				instancesInfo.UUID = serverInfoResponse.Servers[0].Id
+				vncInfo, err := GetVNCRequest(serverInfoResponse.Servers[0].Id)
+				if err != nil {
+					log.Error(err)
+				}
+				instancesInfo.VNCAddress = vncInfo.Url
+				instancesInfo.TimeOfuse = time.Now().Format("2006-01-02 15:04:05") + "-" + time.Now().Add(time.Duration(duration)*time.Minute).Format("2006-01-02 15:04:05")
+				instancesInfo.UserID = 1
+				instancesInfo.VmLog = "系统自动消息: 审批通过"
+				instancesInfo.CreatedAt = time.Now()
+				instancesInfo.UpdatedAt = time.Now()
+				data := instancesInfo
+
+				log.Info("申请机器成功", data)
+
+				data.Create()
+
+				app.OK(c, data, "申请机器成功")
+				return
+			} else if serverInfo.Servers[0].Status == "ERROR" {
+				log.Error("服务器状态为 %s", serverInfo.Servers[0].Status)
+				app.Error(c, http.StatusInternalServerError, fmt.Errorf("服务器状态为ERROR"), "申请机器失败")
+				return
+			}
+			log.Info("服务器状态为: %s, 继续等待...", serverInfo.Servers[0].Status)
+		case <-timeout:
+			log.Info("等待超时，未能成功获取到ACTIVE状态的服务器信息")
+			app.Error(c, http.StatusInternalServerError, fmt.Errorf("等待服务器状态超时"), "申请机器失败")
+			return
+		}
+	}
 }
 
 func GetALLVMList(c *gin.Context) {
@@ -57,7 +104,6 @@ func GetALLVMList(c *gin.Context) {
 	userId := c.Request.FormValue("userId")
 	data.UserID, _ = tools.StringToInt(userId)
 
-	data.OSType = c.Request.FormValue("osType")
 	data.CPUArchitecture = c.Request.FormValue("cpuArchitecture")
 
 	data.Status = c.Request.FormValue("status")
@@ -97,14 +143,10 @@ func GetVMInfo(c *gin.Context) {
 		app.Error(c, 500, err, "查询失败")
 		return
 	}
-
 	virtualMachineInfo.UserName.Username = userInfo.Username
 
-	result := map[string]interface{}{
-		"data": virtualMachineInfo,
-	}
 	tools.HasError(err, "查询失败", 500)
-	app.OK(c, result, "查询成功")
+	app.OK(c, virtualMachineInfo, "查询成功")
 }
 
 func UpdateVMStatus(c *gin.Context) {

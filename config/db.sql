@@ -5,16 +5,37 @@ SHOW VARIABLES LIKE 'time_zone';
 SET time_zone = 'SYSTEM';
 SET GLOBAL time_zone = '+00:00';
 
-INSERT INTO `lab_virtualMachine` (
-   `vm_id`, `user_id`, `cpu_architecture`, `os_type`, `os_image`, `machine_spec`,
-    `ip_address`, `duration`, `status`, `vm_log`, `vnc_address`, `created_at`, `updated_at`
-) VALUES
-(1,1, 'x86_64', 'Desktop', 'Kylin-Desktop-V10-SP1-General-Release-2303-x86-64', '4C-8g ', '192.168.1.1','30', 0, 'Log data...', '192.168.1.1:5900', NOW(), NOW()),
-(2,1, 'arm_64', 'Server', 'Kylin-Server-10-SP2-Release-Build09-20210524-arm64', '4C-8g', '192.168.1.10','30' , 1, 'Log data...', '192.168.1.10:5900', NOW(), NOW()),
-(3,1, 'arm_64', 'Server', 'Kylin-Server-10-SP2-Release-Build09-20210524-arm64', '4C-8g', '192.168.1.11','30', 0, 'Log data...', '192.168.1.10:5900', NOW(), NOW()),
-(4,1, 'arm_64', 'Server', 'Kylin-Server-10-SP2-Release-Build09-20210524-arm64', '4C-8g', '192.168.1.12','30', 1, 'Log data...', '192.168.1.10:5900', NOW(), NOW()),
-(5,1, 'arm_64', 'Server', 'Kylin-Server-10-SP2-Release-Build09-20210524-arm64', '4C-8g', '192.168.1.13','30' , 0, 'Log data...', '192.168.1.10:5900', NOW(), NOW());
-
+INSERT INTO `lab_virtualmachine` (
+    `user_id`,
+    `uuid`,
+    `cpu_architecture`,
+    `os_image`,
+    `flavors`,
+    `vnc_address`,
+    `ip_address`,
+    `network_name`,
+    `duration`,
+    `time_ofuse`,
+    `status`,
+    `vm_log`,
+    `created_at`,
+    `updated_at`
+) VALUES (
+             1,
+             'bab254b7-5074-4d1d-bdb4-54335de251ac',
+             'aarch64',
+             'arm2303.qcow2',
+             '2C-8g',
+             'https://10.44.61.74:6082/spice_auto.html?token=1ce8a129-4877-440a-9ace-c2cea7a549c3',
+             '192.168.0.10',
+             'vxlan',
+             30,
+             '2024-06-13 11:05:27-2024-06-13 11:35:27',
+             0,
+             '系统自动消息: 审批通过',
+             '2024-06-13 11:05:27.165529+08:00',
+             '2024-06-13 11:05:27.165529+08:00'
+         );
 
 
 SET FOREIGN_KEY_CHECKS = 1;
