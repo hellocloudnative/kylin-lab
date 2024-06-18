@@ -82,7 +82,7 @@ func LabToken(c *gin.Context) {
 		UserID:   strconv.Itoa(userInfoResponse.Data.UserInfo.ID),
 		Username: userInfoResponse.Data.UserInfo.Username,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(30 * time.Minute).Unix(),
+			ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
 			Issuer:    "YourIssuer",
 		},
 	})

@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
+	"kylin-lab/api/vm"
 	"kylin-lab/database"
 	"kylin-lab/global/orm"
 	"kylin-lab/router"
@@ -56,6 +57,8 @@ func setup() {
 	tools.InitLogger()
 	//3. 初始化数据库链接
 	database.Setup()
+
+	vm.Setup()
 
 }
 

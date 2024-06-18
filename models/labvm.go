@@ -2,7 +2,9 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"kylin-lab/global/orm"
+	"strings"
 	"time"
 )
 
@@ -41,6 +43,8 @@ type LabVirtualMachineInfo struct {
 	NetworkName     string    `gorm:"type:varchar(255)" json:"networkName"`
 	Duration        string    `gorm:"type:int(2)" json:"duration"`
 	TimeOfuse       string    `gorm:"type:varchar(255)" json:"timeOfuse"`
+	ApplyStatus     string    `gorm:"type:int(1)" json:"applyStatus"`
+	ApplyTime       time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"applyTime"` // 默认值
 	Status          string    `gorm:"type:int(1)" json:"status"`
 	VmLog           string    `gorm:"type:varchar(255)" json:"vmlog"`
 	CreatedAt       time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"createdAt"` // 默认值设置为当前时间戳
@@ -63,6 +67,10 @@ func (e *LabVirtualMachine) GetPage(pageSize int, pageIndex int) ([]LabVirtualMa
 	}
 	if e.Status != "" {
 		table = table.Where("status = ?", e.Status)
+	}
+
+	if e.ApplyStatus != "" {
+		table = table.Where("apply_status = ?", e.ApplyStatus)
 	}
 
 	var count int
@@ -98,20 +106,20 @@ func (e *LabVirtualMachine) Create() (LabVirtualMachine, error) {
 	return doc, nil
 }
 
-func (e *LabVirtualMachine) Update(id int, duration, status string) (update LabVirtualMachine, err error) {
+func (e *LabVirtualMachine) Update(uuid, vmlog, status string) (update LabVirtualMachine, err error) {
 	// 检查id是否有效
-	if id <= 0 {
-		return update, errors.New("invalid ID")
+	if uuid == "" {
+		return update, errors.New("invalid uuid")
 	}
 
 	// 根据id获取要更新的记录
-	if err = orm.Eloquent.Table(e.TableName()).Where("vm_id = ?", id).First(&update).Error; err != nil {
+	if err = orm.Eloquent.Table(e.TableName()).Where("uuid = ?", uuid).First(&update).Error; err != nil {
 		return update, err // 返回错误
 	}
 
 	// 这里假设e结构体中包含了你想要更新的字段，并且这些字段已经被修改
 	// 例如，e.FieldName = newValue
-	e.Duration = duration
+	e.VmLog = vmlog
 	e.Status = status
 
 	// 更新记录
@@ -121,4 +129,57 @@ func (e *LabVirtualMachine) Update(id int, duration, status string) (update LabV
 
 	// 返回更新后的记录
 	return update, nil
+}
+
+func (e *LabVirtualMachine) GetUserVirtualMachineStatus0Count(userId int) (count int, err error) {
+	table := orm.Eloquent.Table(e.TableName()).Select([]string{"lab_virtualMachine.*"})
+	if userId != 0 {
+		table = table.Where("user_id = ? ", userId)
+	}
+	if err = table.Where("status = ?", "0").Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (e *LabVirtualMachine) CheckAllVirtualMachineStatusAndUpdate(status string) ([]LabVirtualMachine, error) {
+	var machines []LabVirtualMachine
+	table := orm.Eloquent.Table(e.TableName()).Select([]string{"lab_virtualMachine.*"})
+	if status != "" {
+		table = table.Where("status = ? ", status)
+	}
+	err := table.Scan(&machines).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, machine := range machines {
+		if machine.Status == "0" {
+			timestamps := strings.Split(machine.TimeOfuse, "-")
+			endTimestampParts := timestamps[len(timestamps)-3:]
+			end_timestamp := strings.Join(endTimestampParts, "-")
+			// 解析TimeOfuse字段，该字段格式为"开始时间-结束时间"
+			endTime, err := time.ParseInLocation("2006-01-02 15:04:05", end_timestamp, time.FixedZone("CST", 8*60*60))
+			if err != nil {
+				// 处理错误
+				return nil, err
+			}
+			// 检查结束时间是否小于当前时间
+			if endTime.Before(time.Now()) {
+				// 更新状态和vmlog
+				machine.Status = "1" // 假设1代表到期
+				machine.VmLog = fmt.Sprintf("系统自动消息: 审批通过。借用的机器时间已到。")
+				err = orm.Eloquent.Table(e.TableName()).Where("uuid = ?", machine.UUID).Updates(map[string]interface{}{
+					"status":     machine.Status,
+					"vm_log":     machine.VmLog,
+					"updated_at": time.Now(),
+				}).Error
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				return nil, nil
+			}
+		}
+	}
+	return machines, nil
 }

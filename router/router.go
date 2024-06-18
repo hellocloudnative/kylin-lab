@@ -29,7 +29,11 @@ func registerUserRouter(v1 *gin.RouterGroup) {
 	router.GET("/getALLVMlist", vm.GetALLVMList)
 	router.GET("/getVMInfo", vm.GetVMInfo)
 	router.GET("/getALLImagesList", vm.GetALLImagesList)
+	router.POST("/startInstances/:instance_id", vm.StartInstances)
+	router.POST("/stopInstances/:instance_id", vm.StopInstances)
+	router.POST("/deleteInstances/:instance_id", vm.DeleteInstances)
+	router.DELETE("/deleteRecycleInstances/:instance_id", vm.DeleteRecycleInstances)
+	router.DELETE("/returnInstances/:instance_id", vm.ReturnInstances)
 	router.POST("/applyInstances", vm.ApplyInstances)
-	router.PUT("/updateVMStatus", vm.UpdateVMStatus)
 
 }

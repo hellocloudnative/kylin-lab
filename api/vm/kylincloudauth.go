@@ -15,6 +15,18 @@ import (
 	"time"
 )
 
+type DeleteAction struct {
+	Action string `json:"action"`
+}
+
+type StartAction struct {
+	Action string `json:"action"`
+}
+
+type StopAction struct {
+	Action string `json:"action"`
+}
+
 type ServerWrapper struct {
 	Servers []Server `json:"items"`
 }
@@ -677,6 +689,182 @@ func PostApplyInstances(hwArchitecture, imageName, Flavors, network string) (Ser
 
 	//log.Println("Parsed images:", imagesResponse.Images)
 	return serverInfoResponse, nil // 成功返回解析后的 ImageWrapper 和 nil
+
+}
+
+func PostDeleteInstances(id string) (bool, error) {
+	token, err := PostAuthRequestToken(config2.KylinCloudConfig.AuthUrl + "/api/auth")
+	if err != nil {
+		log.Error(err)
+		return false, err
+	}
+
+	var deleteAction DeleteAction
+
+	deleteAction.Action = "delete"
+
+	log.Info("Action:", deleteAction)
+
+	jsonBody, err := json.Marshal(deleteAction)
+	if err != nil {
+		log.Error("Error marshalling deleteAction to JSON:", err)
+		return false, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, config2.KylinCloudConfig.ApiUrl+"/api/instances/"+id, bytes.NewReader(jsonBody))
+	if err != nil {
+		log.Error("Error creating HTTP request:", err)
+		return false, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
+	req.Header.Set("x-auth-token", token)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error sending POST request:", err)
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Printf("Failed to create instance: %v, Response: %s\n", resp.StatusCode, body)
+		return false, fmt.Errorf("failed to delete instance, status code: %d", resp.StatusCode)
+	}
+
+	return true, nil // 成功返回解析后的 ImageWrapper 和 nil
+
+}
+
+func PostStartInstances(id string) (bool, error) {
+	token, err := PostAuthRequestToken(config2.KylinCloudConfig.AuthUrl + "/api/auth")
+	if err != nil {
+		log.Error(err)
+		return false, err
+	}
+
+	var startAction StartAction
+
+	startAction.Action = "start"
+
+	log.Info("Action:", startAction)
+
+	jsonBody, err := json.Marshal(startAction)
+	if err != nil {
+		log.Error("Error marshalling startAction to JSON:", err)
+		return false, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, config2.KylinCloudConfig.ApiUrl+"/api/instances/"+id, bytes.NewReader(jsonBody))
+	if err != nil {
+		log.Error("Error creating HTTP request:", err)
+		return false, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
+	req.Header.Set("x-auth-token", token)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error sending POST request:", err)
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Printf("Failed to start instance: %v, Response: %s\n", resp.StatusCode, body)
+		return false, fmt.Errorf("failed to start instance, status code: %d", resp.StatusCode)
+	}
+
+	return true, nil // 成功返回解析后的 ImageWrapper 和 nil
+
+}
+
+func PostStopInstances(id string) (bool, error) {
+	token, err := PostAuthRequestToken(config2.KylinCloudConfig.AuthUrl + "/api/auth")
+	if err != nil {
+		log.Error(err)
+		return false, err
+	}
+
+	var stopAction StopAction
+
+	stopAction.Action = "stop"
+
+	log.Info("Action:", stopAction)
+
+	jsonBody, err := json.Marshal(stopAction)
+	if err != nil {
+		log.Error("Error marshalling stopAction to JSON:", err)
+		return false, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, config2.KylinCloudConfig.ApiUrl+"/api/instances/"+id, bytes.NewReader(jsonBody))
+	if err != nil {
+		log.Error("Error creating HTTP request:", err)
+		return false, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
+	req.Header.Set("x-auth-token", token)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error sending POST request:", err)
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Printf("Failed to create instance: %v, Response: %s\n", resp.StatusCode, body)
+		return false, fmt.Errorf("failed to delete instance, status code: %d", resp.StatusCode)
+	}
+
+	return true, nil // 成功返回解析后的 ImageWrapper 和 nil
+
+}
+
+func PostDeleteRecycleInstances(id string) (bool, error) {
+	token, err := PostAuthRequestToken(config2.KylinCloudConfig.AuthUrl + "/api/auth")
+	if err != nil {
+		log.Error(err)
+		return false, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, config2.KylinCloudConfig.ApiUrl+"/api/recycle/instances/"+id, nil)
+	if err != nil {
+		log.Error("Error creating HTTP request:", err)
+		return false, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
+	req.Header.Set("x-auth-token", token)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error sending Delete request:", err)
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Printf("Failed to delete recycle instance: %v, Response: %s\n", resp.StatusCode, body)
+		return false, fmt.Errorf("failed to delete recycle instance, status code: %d", resp.StatusCode)
+	}
+
+	return true, nil
 
 }
 
