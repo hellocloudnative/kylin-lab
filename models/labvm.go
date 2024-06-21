@@ -13,6 +13,7 @@ func (LabVirtualMachine) TableName() string {
 }
 
 type LabVirtualMachinePage struct {
+	UserName
 	LabVirtualMachineId
 	LabVirtualMachineInfo
 }
@@ -34,11 +35,11 @@ type LabVirtualMachineId struct {
 
 type LabVirtualMachineInfo struct {
 	UserID          int       `gorm:"index" json:"userId"`
+	UserName        string    `gorm:"type:varchar(64)" json:"userName"`
 	UUID            string    `gorm:"type:varchar(255)" json:"uuid"`
 	CPUArchitecture string    `gorm:"type:varchar(64)" json:"cpuArchitecture"`
 	OSImage         string    `gorm:"type:varchar(255)"  json:"osImage"`
 	Flavors         string    `gorm:"type:varchar(255)"json:"flavors"`
-	VNCAddress      string    `gorm:"type:varchar(255)" json:"vncAddress"`
 	IPAddress       string    `gorm:"type:varchar(255)" json:"ipAddress"`
 	NetworkName     string    `gorm:"type:varchar(255)" json:"networkName"`
 	Duration        string    `gorm:"type:int(2)" json:"duration"`
@@ -51,7 +52,7 @@ type LabVirtualMachineInfo struct {
 	UpdatedAt       time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updatedAt"` // 默认值设置为当前时间戳
 }
 
-func (e *LabVirtualMachine) GetPage(pageSize int, pageIndex int) ([]LabVirtualMachinePage, int, error) {
+func (e *LabVirtualMachine) GetPage(pageSize int, pageIndex int, isDesc bool) ([]LabVirtualMachinePage, int, error) {
 	var doc []LabVirtualMachinePage
 	table := orm.Eloquent.Select("lab_virtualMachine.*").Table(e.TableName())
 
@@ -71,6 +72,12 @@ func (e *LabVirtualMachine) GetPage(pageSize int, pageIndex int) ([]LabVirtualMa
 
 	if e.ApplyStatus != "" {
 		table = table.Where("apply_status = ?", e.ApplyStatus)
+	}
+	// 添加排序
+	if isDesc {
+		table = table.Order("vm_id" + " desc")
+	} else {
+		table = table.Order("vm_id" + " asc")
 	}
 
 	var count int

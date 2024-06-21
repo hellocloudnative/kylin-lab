@@ -481,8 +481,8 @@ func GetVNCRequest(id string) (VNCWrapper, error) {
 
 	// 检查响应状态码
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("Failed to get images: %v\n", resp.StatusCode)
-		return VNCWrapper{}, fmt.Errorf("failed to get images: %v", resp.StatusCode) // 返回空的 ImageWrapper 和错误
+		log.Printf("Failed to get vnc: %v\n", resp.StatusCode)
+		return VNCWrapper{}, fmt.Errorf("failed to get vnc: %v", resp.StatusCode) // 返回空的 ImageWrapper 和错误
 	}
 
 	// 读取响应体

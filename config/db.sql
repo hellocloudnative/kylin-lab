@@ -7,11 +7,11 @@ SET GLOBAL time_zone = '+00:00';
 
 INSERT INTO `lab_virtualmachine` (
     `user_id`,
+    `user_name`,
     `uuid`,
     `cpu_architecture`,
     `os_image`,
     `flavors`,
-    `vnc_address`,
     `ip_address`,
     `network_name`,
     `duration`,
@@ -24,11 +24,11 @@ INSERT INTO `lab_virtualmachine` (
     `updated_at`
 ) VALUES (
              1,
+             'admin',
              'bab254b7-5074-4d1d-bdb4-54335de251ac',
              'aarch64',
              'arm2303.qcow2',
              '2C-8g',
-             'https://10.44.61.74:6082/spice_auto.html?token=1ce8a129-4877-440a-9ace-c2cea7a549c3',
              '192.168.0.10',
              'vxlan',
              30,

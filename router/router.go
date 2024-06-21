@@ -35,5 +35,5 @@ func registerUserRouter(v1 *gin.RouterGroup) {
 	router.DELETE("/deleteRecycleInstances/:instance_id", vm.DeleteRecycleInstances)
 	router.DELETE("/returnInstances/:instance_id", vm.ReturnInstances)
 	router.POST("/applyInstances", vm.ApplyInstances)
-
+	router.GET("/getVNC/:instance_id", vm.GetVNC)
 }
